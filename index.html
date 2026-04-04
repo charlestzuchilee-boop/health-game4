@@ -262,7 +262,27 @@ function update(){
     var e=enemies[i];
     e.x+=e.vx;e.y+=e.vy;
     if(e.x<0||e.x+e.w>W)e.vx*=-1;
-    if(e.y>H&&!e.hit){e.hit=true;enemies.splice(i,1);}
+    if(e.y>H&&!e.hit){
+      e.hit=true;
+      // 正確答案跑掉 = 答錯扣血
+      if(e.isCorrect&&!nextReady){
+        combo=0;hp--;
+        wrongList.push({q:curQ.q,correct:curQ.o[curQ.a],chosen:'（未射擊）'});
+        sfxHit(false);
+        showFb('⏰ 正確答案跑掉了！扣血！正解：「'+curQ.o[curQ.a]+'」','ng');
+        updStats();
+        nextReady=true;
+        if(hp<=0){setTimeout(endGame,500);}
+        else{setTimeout(function(){if(!over)loadQ();},800);}
+      }
+      enemies.splice(i,1);
+    }
+  }
+
+  // 所有敵人都消失但沒打到正確答案 → 也算答錯
+  if(enemies.length===0&&!nextReady&&curQ){
+    var correctWasHit=false; // 如果正確答案還沒被打中卻全消失
+    // 用 wrongList 最後一筆判斷（正確答案已在上面處理）
   }
 
   // 子彈 vs 敵人
