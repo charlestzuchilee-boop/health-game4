@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>健康知識射擊</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',sans-serif;background:#060D1A;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px}
+h1{font-size:17px;font-weight:700;color:#A78BFA;margin-bottom:10px;letter-spacing:.08em;text-align:center}
+.stats{display:flex;gap:6px;margin-bottom:8px;width:100%;max-width:400px}
+.chip{flex:1;background:#1E293B;border-radius:8px;border:1px solid #334155;padding:6px 8px;text-align:center}
+.chip-t{font-size:9px;font-weight:700;color:#64748B;letter-spacing:.06em}
+.chip-v{font-size:17px;font-weight:700;color:#A78BFA;line-height:1.2}
+.canvas-wrap{position:relative;width:100%;max-width:400px;display:flex;justify-content:center}
+canvas{display:block;border-radius:8px;border:1px solid #1E293B;width:100%;max-width:400px}
+.overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(6,13,26,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;gap:10px;padding:16px;overflow-y:auto}
+.ot{font-size:18px;font-weight:700;color:#A78BFA;text-align:center}
+.os{font-size:12px;color:#94A3B8;text-align:center;line-height:2}
+.bb{padding:12px 28px;border-radius:10px;border:none;background:#7C3AED;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all .15s}
+.bb:hover{background:#6D28D9}
+.bb:active{transform:scale(.97)}
+.qbar{background:#1E293B;border-radius:8px;border:1px solid #334155;padding:10px 12px;margin-top:8px;font-size:13px;color:#64748B;line-height:1.7;min-height:42px;width:100%;max-width:400px}
+.qbar.ok{background:#064E3B;border-color:#10B981;color:#6EE7B7}
+.qbar.ng{background:#450A0A;border-color:#EF4444;color:#FCA5A5}
+.ctrl{display:flex;gap:6px;justify-content:center;margin-top:8px}
+.cbtn{padding:8px 18px;border-radius:8px;border:1px solid #334155;background:#1E293B;color:#94A3B8;font-size:12px;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
+.cbtn:active{background:#334155}
+.dpad{display:flex;gap:8px;justify-content:center;margin-top:8px;width:100%;max-width:400px}
+.dbtn{flex:1;max-width:120px;height:52px;border-radius:10px;border:1px solid #475569;background:#1E293B;color:#94A3B8;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;transition:all .1s}
+.dbtn:active{background:#334155;transform:scale(.93)}
+</style>
+</head>
+<body>
+<h1>⚕️ 健康知識射擊</h1>
+
+<div class="stats">
+  <div class="chip"><div class="chip-t">得分</div><div class="chip-v" id="sc">0</div></div>
+  <div class="chip"><div class="chip-t">生命</div><div class="chip-v" id="hp">❤️❤️❤️</div></div>
+  <div class="chip"><div class="chip-t">關卡</div><div class="chip-v" id="lv">1</div></div>
+  <div class="chip"><div class="chip-t">連擊</div><div class="chip-v" id="combo">0</div></div>
+</div>
+
+<div class="canvas-wrap">
+  <canvas id="gc" width="360" height="480"></canvas>
+  <div class="overlay" id="ov">
+    <div class="ot">⚕️ 健康知識射擊</div>
+    <div class="os">
+      敵人身上帶著答案選項<br>
+      射擊正確答案的敵人得分！<br>
+      射錯答案 → 扣血<br><br>
+      ← → 或滑動 移動<br>
+      空白鍵 / 點擊 射擊
+    </div>
+    <button class="bb" id="startbtn">開始遊戲 ▶</button>
+  </div>
+</div>
+
+<div class="qbar" id="qbar">遊戲開始後出現題目...</div>
+
+<div class="dpad">
+  <button class="dbtn" id="dl">←</button>
+  <button class="dbtn" id="dshoot">🔫</button>
+  <button class="dbtn" id="dr">→</button>
+</div>
+
+<div class="ctrl">
+  <button class="cbtn" id="pbtn">暫停</button>
+  <button class="cbtn" id="rbtn">重來</button>
+</div>
+
+<script>
+const cv=document.getElementById('gc');
+const cx=cv.getContext('2d');
+const W=360,H=480;
+
+const QS=[
+  {q:'BMI 正常範圍？',o:['<18.5','18.5-24','24-27','>30'],a:1},
+  {q:'每天建議步數？',o:['3000步','5000步','8000步','12000步'],a:2},
+  {q:'成人建議睡眠？',o:['5小時','6小時','7-9小時','10小時+'],a:2},
+  {q:'每日飲水建議？',o:['500mL','1000mL','2000mL','4000mL'],a:2},
+  {q:'有氧運動心率？',o:['20-40%','40-55%','60-80%','90%+'],a:2},
+  {q:'最益心血管油？',o:['豬油','奶油','橄欖油','棕櫚油'],a:2},
+  {q:'台灣肥胖BMI≥？',o:['24','27','30','35'],a:1},
+  {q:'量血壓前靜坐？',o:['不用','1分鐘','5分鐘','20分鐘'],a:2},
+  {q:'膳食纖維最多？',o:['白飯','雞肉','燕麥','牛奶'],a:2},
+  {q:'正常收縮壓<？',o:['90','100','120','140'],a:2},
+  {q:'每週有氧時間？',o:['30分','60分','150分','300分'],a:2},
+  {q:'夜盲缺乏維生素？',o:['維A','維B','維C','維D'],a:0},
+  {q:'每日鈉建議<？',o:['1000mg','2000mg','3000mg','5g'],a:1},
+  {q:'正常舒張壓<？',o:['60','70','80','90'],a:2},
+  {q:'水佔體重比例？',o:['40%','50%','60%','70%'],a:2},
+  {q:'CPR壓胸速率？',o:['每分鐘60','每分鐘80','每分鐘100-120','每分鐘150'],a:2},
+  {q:'台灣四癌不含？',o:['大腸癌','肝癌','乳癌','口腔癌'],a:1},
+  {q:'高血壓收縮壓≥？',o:['110','120','130','140'],a:3},
+  {q:'骨質疏鬆補充？',o:['維A','維B','維C','維D+鈣'],a:3},
+  {q:'心肌梗塞警示？',o:['只有背痛','胸悶冒冷汗喘','只有頭痛','只有噁心'],a:1},
+  {q:'糖尿病空腹血糖≥？',o:['100','110','126','140'],a:2},
+  {q:'成人正常體溫？',o:['35-36°C','36-37.5°C','37.5-38°C','38°C+'],a:1},
+  {q:'預防骨質疏鬆？',o:['少運動','避免日曬','補鈣+維D','多吃高鹽'],a:2},
+  {q:'口腔癌危險因子？',o:['多喝水','嚼檳榔吸菸飲酒','過度運動','睡眠不足'],a:1},
+  {q:'每週肌力訓練？',o:['每天同部位','每週2-3次','每月一次','每週7次'],a:1},
+  {q:'維生素C功能？',o:['強化骨骼','抗氧化免疫','護眼','補血'],a:1},
+  {q:'缺鐵補充？',o:['鈣','鐵+維生素C','維生素D','鋅'],a:1},
+  {q:'正常LDL<？',o:['100','130','160','200'],a:1},
+  {q:'中風FAST？',o:['發燒過敏抽筋','臉歪手無力說話不清','食慾不振昏睡','發燒痙攣昏迷'],a:1},
+  {q:'洗手步驟幾步？',o:['3步','5步','6步','10步'],a:2},
+  {q:'肺結核傳播？',o:['接觸傳染','飛沫傳染','血液傳染','糞口傳染'],a:1},
+  {q:'HIV傳播？',o:['握手','蚊蟲叮咬','血液體液','空氣飛沫'],a:2},
+  {q:'乳癌自我檢查？',o:['每年一次','每月一次','每週一次','每天一次'],a:1},
+  {q:'流感疫苗建議？',o:['每5年','每3年','每2年','每年'],a:3},
+  {q:'反式脂肪危害？',o:['增加好膽固醇','降低壞膽固醇','增加心血管風險','無危害'],a:2},
+];
+
+const ECOLS=['#EF4444','#F59E0B','#10B981','#3B82F6','#A855F7','#EC4899'];
+
+let player,bullets,enemies,particles,score,hp,level,combo,maxCombo,paused,over,qs,qi,curQ,frameId,wrongList,nextReady;
+
+function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
+
+function init(){
+  player={x:W/2-18,y:H-54,w:36,h:28,speed:5};
+  bullets=[];enemies=[];particles=[];
+  score=0;hp=3;level=1;combo=0;maxCombo=0;
+  paused=false;over=false;nextReady=false;
+  qs=shuffle(QS);qi=0;wrongList=[];
+  document.getElementById('ov').style.display='none';
+  document.getElementById('pbtn').textContent='暫停';
+  updStats();loadQ();
+  if(frameId)cancelAnimationFrame(frameId);
+  loop();
+}
+
+function loadQ(){
+  if(qi>=qs.length){qs=shuffle(QS);qi=0;}
+  curQ=qs[qi];qi++;
+  nextReady=false;
+  document.getElementById('qbar').textContent='❓ '+curQ.q;
+  document.getElementById('qbar').className='qbar';
+  enemies=[];bullets=[];
+  spawnWave();
+}
+
+function spawnWave(){
+  var cols=curQ.o.length;
+  var spacing=W/(cols+1);
+  for(var i=0;i<cols;i++){
+    enemies.push({
+      x:spacing*(i+1)-25,
+      y:-50-i*20,
+      w:50,h:38,
+      vx:(Math.random()-.5)*1.0,
+      vy:0.55+level*0.12,
+      idx:i,
+      label:curQ.o[i],
+      isCorrect:(i===curQ.a),
+      col:ECOLS[i%ECOLS.length],
+      hit:false
+    });
+  }
+}
+
+var keys={};
+document.addEventListener('keydown',function(e){
+  keys[e.key]=true;
+  if(e.key===' '||e.key==='ArrowUp'){e.preventDefault();shoot();}
+  if(e.key==='p'||e.key==='P')document.getElementById('pbtn').click();
+});
+document.addEventListener('keyup',function(e){keys[e.key]=false;});
+
+document.getElementById('dl').addEventListener('touchstart',function(e){e.preventDefault();keys['ArrowLeft']=true;},{passive:false});
+document.getElementById('dl').addEventListener('touchend',function(e){e.preventDefault();keys['ArrowLeft']=false;},{passive:false});
+document.getElementById('dr').addEventListener('touchstart',function(e){e.preventDefault();keys['ArrowRight']=true;},{passive:false});
+document.getElementById('dr').addEventListener('touchend',function(e){e.preventDefault();keys['ArrowRight']=false;},{passive:false});
+document.getElementById('dshoot').addEventListener('touchstart',function(e){e.preventDefault();shoot();},{passive:false});
+document.getElementById('dl').onclick=function(){keys['ArrowLeft']=true;setTimeout(function(){keys['ArrowLeft']=false;},150);};
+document.getElementById('dr').onclick=function(){keys['ArrowRight']=true;setTimeout(function(){keys['ArrowRight']=false;},150);};
+document.getElementById('dshoot').onclick=shoot;
+
+var touchSX=null;
+cv.addEventListener('touchstart',function(e){
+  e.preventDefault();
+  touchSX=e.touches[0].clientX;
+  shoot();
+},{passive:false});
+cv.addEventListener('touchmove',function(e){
+  e.preventDefault();
+  var r=cv.getBoundingClientRect();
+  var scaleX=W/r.width;
+  var tx=(e.touches[0].clientX-r.left)*scaleX;
+  player.x=Math.max(0,Math.min(W-player.w,tx-player.w/2));
+},{passive:false});
+cv.addEventListener('click',function(e){
+  if(over)return;
+  var r=cv.getBoundingClientRect();
+  var scaleX=W/r.width;
+  var tx=(e.clientX-r.left)*scaleX;
+  player.x=Math.max(0,Math.min(W-player.w,tx-player.w/2));
+  shoot();
+});
+
+var lastShot=0;
+function shoot(){
+  if(over||paused)return;
+  var now=Date.now();
+  if(now-lastShot<280)return;
+  lastShot=now;
+  bullets.push({x:player.x+player.w/2,y:player.y,vy:-11,r:5});
+  // 射擊音效
+  try{
+    var ac=new(window.AudioContext||window.webkitAudioContext)();
+    var o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);
+    o.type='square';o.frequency.value=800;
+    g.gain.setValueAtTime(.15,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.08);
+    o.start();o.stop(ac.currentTime+.09);
+  }catch(e){}
+}
+
+function sfxHit(ok){
+  try{
+    var ac=new(window.AudioContext||window.webkitAudioContext)();
+    if(ok){
+      [[523,.08,.18],[659,.08,.18,.09],[784,.15,.2,.18]].forEach(function(n){
+        var o=ac.createOscillator(),g=ac.createGain();
+        o.connect(g);g.connect(ac.destination);
+        o.type='sine';o.frequency.value=n[0];
+        g.gain.setValueAtTime(0,ac.currentTime+(n[3]||0));
+        g.gain.linearRampToValueAtTime(n[2],ac.currentTime+(n[3]||0)+.01);
+        g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+(n[3]||0)+n[1]);
+        o.start(ac.currentTime+(n[3]||0));o.stop(ac.currentTime+(n[3]||0)+n[1]+.05);
+      });
+    } else {
+      var o=ac.createOscillator(),g=ac.createGain();
+      o.connect(g);g.connect(ac.destination);
+      o.type='sawtooth';o.frequency.value=180;
+      g.gain.setValueAtTime(.4,ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.3);
+      o.start();o.stop(ac.currentTime+.35);
+    }
+  }catch(e){}
+}
+
+function loop(){
+  if(!paused&&!over)update();
+  draw();
+  frameId=requestAnimationFrame(loop);
+}
+
+function update(){
+  if(keys['ArrowLeft']||keys['a']) player.x=Math.max(0,player.x-player.speed);
+  if(keys['ArrowRight']||keys['d']) player.x=Math.min(W-player.w,player.x+player.speed);
+
+  for(var i=bullets.length-1;i>=0;i--){
+    bullets[i].y+=bullets[i].vy;
+    if(bullets[i].y<-10)bullets.splice(i,1);
+  }
+
+  for(var i=enemies.length-1;i>=0;i--){
+    var e=enemies[i];
+    e.x+=e.vx;e.y+=e.vy;
+    if(e.x<0||e.x+e.w>W)e.vx*=-1;
+    if(e.y>H&&!e.hit){e.hit=true;enemies.splice(i,1);}
+  }
+
+  // 子彈 vs 敵人
+  outer:for(var bi=bullets.length-1;bi>=0;bi--){
+    var b=bullets[bi];
+    for(var ei=enemies.length-1;ei>=0;ei--){
+      var e=enemies[ei];
+      if(b.x>e.x&&b.x<e.x+e.w&&b.y>e.y&&b.y<e.y+e.h){
+        bullets.splice(bi,1);
+        spawnParticles(e.x+e.w/2,e.y+e.h/2,e.isCorrect?'#10B981':'#EF4444',e.isCorrect?12:8);
+        enemies.splice(ei,1);
+        if(e.isCorrect){
+          combo++;if(combo>maxCombo)maxCombo=combo;
+          var pts=100+combo*20+level*10;score+=pts;
+          sfxHit(true);
+          showFb('✅ 正確！+'+pts+'分！連擊 x'+combo+'　'+curQ.o[curQ.a]+'　'+getExp(curQ),'ok');
+          updStats();
+          if(!nextReady){nextReady=true;setTimeout(function(){if(!over)loadQ();},700);}
+        } else {
+          combo=0;hp--;
+          wrongList.push({q:curQ.q,correct:curQ.o[curQ.a],chosen:e.label});
+          sfxHit(false);
+          showFb('❌ 答錯！扣血！正解：「'+curQ.o[curQ.a]+'」','ng');
+          updStats();
+          if(hp<=0){setTimeout(endGame,500);}
+          else if(!nextReady){nextReady=true;setTimeout(function(){if(!over)loadQ();},700);}
+        }
+        break outer;
+      }
+    }
+  }
+
+  for(var i=particles.length-1;i>=0;i--){
+    var p=particles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.18;p.life--;
+    if(p.life<=0)particles.splice(i,1);
+  }
+
+  if(score>level*1000&&level<10)level++;
+}
+
+var EXPS={
+  'BMI 正常範圍？':'18.5–24為正常體重',
+  '每天建議步數？':'WHO建議每天至少8000步',
+  '成人建議睡眠？':'建議7-9小時優質睡眠',
+  '每日飲水建議？':'每日建議飲水約2000mL',
+  '有氧運動心率？':'有效有氧需達最大心率60-80%',
+  '最益心血管油？':'橄欖油富含單元不飽和脂肪酸',
+  '台灣肥胖BMI≥？':'BMI≥27為台灣輕度肥胖標準',
+  '量血壓前靜坐？':'靜坐5分鐘讓數值更準確',
+  '膳食纖維最多？':'燕麥富含β-葡聚醣',
+  '正常收縮壓<？':'正常血壓收縮壓<120mmHg',
+  '每週有氧時間？':'WHO建議每週至少150分鐘',
+  '夜盲缺乏維生素？':'維生素A是合成視紫質的原料',
+  '每日鈉建議<？':'WHO建議每日鈉<2000mg',
+  '正常舒張壓<？':'正常血壓舒張壓<80mmHg',
+  '水佔體重比例？':'成人體重約60%是水分',
+  'CPR壓胸速率？':'CPR胸外按壓建議速率為每分鐘100-120下',
+  '台灣四癌不含？':'台灣四癌篩檢為大腸癌、子宮頸癌、乳癌、口腔癌',
+  '高血壓收縮壓≥？':'收縮壓≥140mmHg為高血壓',
+  '骨質疏鬆補充？':'維D幫助鈣吸收，預防骨質疏鬆',
+  '心肌梗塞警示？':'心肌梗塞常見症狀包括胸悶胸痛、冒冷汗、呼吸困難',
+};
+function getExp(q){return EXPS[q.q]||'';}
+
+function spawnParticles(x,y,col,n){
+  for(var i=0;i<n;i++){
+    particles.push({x:x,y:y,vx:(Math.random()-.5)*6,vy:(Math.random()-.5)*6-2,col:col,r:Math.random()*4+2,life:28});
+  }
+}
+
+function showFb(txt,cls){
+  var el=document.getElementById('qbar');
+  el.textContent=txt;el.className='qbar '+cls;
+}
+
+function endGame(){
+  over=true;cancelAnimationFrame(frameId);
+  var ov=document.getElementById('ov');ov.style.display='flex';
+  var reviewHtml='';
+  if(wrongList.length>0){
+    reviewHtml+='<div style="width:100%;text-align:left;max-height:200px;overflow-y:auto;border-top:1px solid #334155;padding-top:10px;margin-top:4px">';
+    reviewHtml+='<div style="font-size:11px;font-weight:700;color:#F87171;margin-bottom:8px;text-align:center">📋 答錯複習（'+wrongList.length+'題）</div>';
+    wrongList.forEach(function(w,i){
+      reviewHtml+='<div style="background:#1E293B;border-radius:8px;padding:8px 10px;margin-bottom:6px;border:1px solid #334155">'
+        +'<div style="font-size:11px;color:#E2E8F0;font-weight:700;margin-bottom:3px">'+w.q+'</div>'
+        +'<div style="font-size:11px;color:#FCA5A5">✗ 你選：'+w.chosen+'</div>'
+        +'<div style="font-size:11px;color:#6EE7B7;margin-top:2px">✓ 正解：'+w.correct+'</div>'
+        +'</div>';
+    });
+    reviewHtml+='</div>';
+  }
+  ov.innerHTML='<div class="ot">遊戲結束！</div>'
+    +'<div class="os">得分：'+score+'　正確率：'+Math.round((qi-1-wrongList.length)/Math.max(1,qi-1)*100)+'%<br>關卡：'+level+'　最高連擊：'+maxCombo+'</div>'
+    +reviewHtml
+    +'<button class="bb" onclick="init()">再玩一次 🔄</button>';
+}
+
+function updStats(){
+  document.getElementById('sc').textContent=score;
+  document.getElementById('hp').textContent='❤️'.repeat(Math.max(0,hp))+'🖤'.repeat(Math.max(0,3-hp));
+  document.getElementById('lv').textContent=level;
+  document.getElementById('combo').textContent=combo;
+}
+
+function rr(c,x,y,w,h,r){
+  c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);
+  c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);
+  c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);
+  c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);c.closePath();
+}
+
+function wt(c,text,cx2,cy,maxW,col){
+  c.fillStyle=col||'#fff';c.textAlign='center';c.textBaseline='middle';
+  c.font='bold 11px "Noto Sans TC",sans-serif';
+  var chars=text.split(''),line='',lines=[];
+  for(var i=0;i<chars.length;i++){
+    var t=line+chars[i];
+    if(c.measureText(t).width>maxW-6&&line.length>0){lines.push(line);line=chars[i];}else line=t;
+  }
+  lines.push(line);
+  var sy=cy-((lines.length-1)*13)/2;
+  lines.forEach(function(l,i){c.fillText(l,cx2,sy+i*13);});
+}
+
+var starSeed=[];
+for(var i=0;i<50;i++)starSeed.push([Math.random()*W,Math.random()*H,Math.random()]);
+
+function draw(){
+  cx.fillStyle='#060D1A';cx.fillRect(0,0,W,H);
+
+  // 星星
+  var t=Date.now()*0.0003;
+  starSeed.forEach(function(s,i){
+    var sy=(s[1]+t*20*(s[2]+.5)*60)%H;
+    cx.fillStyle=i%5==0?'#334155':'#1E293B';
+    cx.fillRect(s[0],sy,i%7==0?2:1,i%7==0?2:1);
+  });
+
+  // 地面
+  cx.strokeStyle='#1E293B';cx.lineWidth=1;
+  cx.beginPath();cx.moveTo(0,H-52);cx.lineTo(W,H-52);cx.stroke();
+
+  // 敵人
+  enemies.forEach(function(e){
+    cx.fillStyle=e.col;
+    rr(cx,e.x,e.y,e.w,e.h,7);cx.fill();
+    cx.fillStyle='rgba(255,255,255,.15)';
+    rr(cx,e.x+2,e.y+2,e.w-4,8,3);cx.fill();
+    cx.fillStyle='rgba(0,0,0,.15)';
+    rr(cx,e.x+2,e.y+e.h-8,e.w-4,6,3);cx.fill();
+    // 眼睛
+    cx.fillStyle='#fff';
+    cx.fillRect(e.x+8,e.y+9,7,7);cx.fillRect(e.x+e.w-15,e.y+9,7,7);
+    cx.fillStyle='#111';
+    cx.fillRect(e.x+10,e.y+10,4,5);cx.fillRect(e.x+e.w-13,e.y+10,4,5);
+    // 嘴巴
+    cx.strokeStyle='rgba(0,0,0,.4)';cx.lineWidth=1.5;
+    cx.beginPath();cx.arc(e.x+e.w/2,e.y+e.h-9,5,0,Math.PI);cx.stroke();
+    // 答案文字
+    wt(cx,e.label,e.x+e.w/2,e.y+e.h+9,e.w,'#CBD5E1');
+    // 正確答案光暈
+    if(e.isCorrect){
+      cx.strokeStyle='rgba(16,185,129,0.25)';cx.lineWidth=2;
+      rr(cx,e.x-3,e.y-3,e.w+6,e.h+6,10);cx.stroke();
+    }
+  });
+
+  // 子彈
+  bullets.forEach(function(b){
+    cx.fillStyle='#FBBF24';
+    cx.beginPath();cx.arc(b.x,b.y,b.r,0,Math.PI*2);cx.fill();
+    cx.fillStyle='rgba(251,191,36,.25)';
+    cx.beginPath();cx.arc(b.x,b.y+5,b.r+2,0,Math.PI*2);cx.fill();
+  });
+
+  // 玩家太空船
+  var px=player.x,py=player.y;
+  cx.fillStyle='#7C3AED';
+  cx.beginPath();cx.moveTo(px+player.w/2,py);cx.lineTo(px+player.w,py+player.h);cx.lineTo(px,py+player.h);cx.closePath();cx.fill();
+  cx.fillStyle='#A78BFA';
+  cx.beginPath();cx.arc(px+player.w/2,py+14,7,0,Math.PI*2);cx.fill();
+  cx.fillStyle='#1E293B';
+  cx.beginPath();cx.arc(px+player.w/2,py+14,4,0,Math.PI*2);cx.fill();
+  // 引擎火焰
+  var fl=6+Math.random()*6;
+  cx.fillStyle='#F59E0B';
+  cx.beginPath();cx.moveTo(px+10,py+player.h);cx.lineTo(px+player.w/2,py+player.h+fl);cx.lineTo(px+player.w-10,py+player.h);cx.closePath();cx.fill();
+  cx.fillStyle='#FEF3C7';
+  cx.beginPath();cx.moveTo(px+14,py+player.h);cx.lineTo(px+player.w/2,py+player.h+fl*0.5);cx.lineTo(px+player.w-14,py+player.h);cx.closePath();cx.fill();
+
+  // 粒子
+  particles.forEach(function(p){
+    cx.globalAlpha=Math.max(0,p.life/28);
+    cx.fillStyle=p.col;
+    cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fill();
+  });
+  cx.globalAlpha=1;
+}
+
+document.getElementById('startbtn').onclick=init;
+document.getElementById('rbtn').onclick=init;
+document.getElementById('pbtn').onclick=function(){
+  if(over)return;paused=!paused;
+  this.textContent=paused?'繼續':'暫停';
+};
+
+cx.fillStyle='#060D1A';cx.fillRect(0,0,W,H);
+</script>
+</body>
+</html>
