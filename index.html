@@ -7,34 +7,32 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans TC',sans-serif;background:#060D1A;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px}
-h1{font-size:17px;font-weight:700;color:#A78BFA;margin-bottom:10px;letter-spacing:.08em;text-align:center}
-.stats{display:flex;gap:6px;margin-bottom:8px;width:100%;max-width:400px}
-.chip{flex:1;background:#1E293B;border-radius:8px;border:1px solid #334155;padding:6px 8px;text-align:center}
-.chip-t{font-size:9px;font-weight:700;color:#64748B;letter-spacing:.06em}
-.chip-v{font-size:17px;font-weight:700;color:#A78BFA;line-height:1.2}
-.canvas-wrap{position:relative;width:100%;max-width:400px;display:flex;justify-content:center}
-canvas{display:block;border-radius:8px;border:1px solid #1E293B;width:100%;max-width:400px}
-.overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(6,13,26,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;gap:10px;padding:16px;overflow-y:auto}
-.ot{font-size:18px;font-weight:700;color:#A78BFA;text-align:center}
-.os{font-size:12px;color:#94A3B8;text-align:center;line-height:2}
-.bb{padding:12px 28px;border-radius:10px;border:none;background:#7C3AED;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all .15s}
-.bb:hover{background:#6D28D9}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Noto Sans TC',sans-serif;background:#060D1A;color:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:6px;height:100vh;height:100dvh}
+.stats{display:flex;gap:4px;width:100%;max-width:400px;margin-bottom:4px}
+.chip{flex:1;background:#1E293B;border-radius:6px;border:1px solid #334155;padding:3px 4px;text-align:center}
+.chip-t{font-size:8px;font-weight:700;color:#64748B;letter-spacing:.04em}
+.chip-v{font-size:14px;font-weight:700;color:#A78BFA;line-height:1.1}
+.canvas-wrap{position:relative;width:100%;max-width:400px;flex:1;min-height:0;display:flex;justify-content:center}
+canvas{display:block;border-radius:8px;border:1px solid #1E293B;width:100%;height:100%;object-fit:contain}
+.overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(6,13,26,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;gap:8px;padding:12px;overflow-y:auto}
+.ot{font-size:16px;font-weight:700;color:#A78BFA;text-align:center}
+.os{font-size:11px;color:#94A3B8;text-align:center;line-height:1.8}
+.bb{padding:10px 24px;border-radius:10px;border:none;background:#7C3AED;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
 .bb:active{transform:scale(.97)}
-.qbar{background:#1E293B;border-radius:8px;border:1px solid #334155;padding:10px 12px;margin-top:8px;font-size:13px;color:#64748B;line-height:1.7;min-height:42px;width:100%;max-width:400px}
+.qbar{background:#1E293B;border-radius:6px;border:1px solid #334155;padding:4px 8px;margin-top:4px;font-size:11px;color:#64748B;line-height:1.5;width:100%;max-width:400px;min-height:0}
 .qbar.ok{background:#064E3B;border-color:#10B981;color:#6EE7B7}
 .qbar.ng{background:#450A0A;border-color:#EF4444;color:#FCA5A5}
-.ctrl{display:flex;gap:6px;justify-content:center;margin-top:8px}
-.cbtn{padding:8px 18px;border-radius:8px;border:1px solid #334155;background:#1E293B;color:#94A3B8;font-size:12px;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
-.cbtn:active{background:#334155}
-.dpad{display:flex;gap:8px;justify-content:center;margin-top:8px;width:100%;max-width:400px}
-.dbtn{flex:1;max-width:120px;height:52px;border-radius:10px;border:1px solid #475569;background:#1E293B;color:#94A3B8;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;transition:all .1s}
+.bottom-row{display:flex;gap:6px;width:100%;max-width:400px;margin-top:4px;align-items:center}
+.dbtn{flex:1;height:44px;border-radius:8px;border:1px solid #475569;background:#1E293B;color:#94A3B8;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .dbtn:active{background:#334155;transform:scale(.93)}
+.cbtn{padding:0 10px;height:44px;border-radius:8px;border:1px solid #334155;background:#1E293B;color:#94A3B8;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap}
+.cbtn:active{background:#334155}
 </style>
 </head>
 <body>
-<h1>⚕️ 健康知識射擊</h1>
-
 <div class="stats">
   <div class="chip"><div class="chip-t">得分</div><div class="chip-v" id="sc">0</div></div>
   <div class="chip"><div class="chip-t">生命</div><div class="chip-v" id="hp">❤️❤️❤️</div></div>
@@ -43,37 +41,29 @@ canvas{display:block;border-radius:8px;border:1px solid #1E293B;width:100%;max-w
 </div>
 
 <div class="canvas-wrap">
-  <canvas id="gc" width="360" height="480"></canvas>
+  <canvas id="gc" width="360" height="420"></canvas>
   <div class="overlay" id="ov">
     <div class="ot">⚕️ 健康知識射擊</div>
-    <div class="os">
-      敵人身上帶著答案選項<br>
-      射擊正確答案的敵人得分！<br>
-      射錯答案 → 扣血<br><br>
-      ← → 或滑動 移動<br>
-      空白鍵 / 點擊 射擊
-    </div>
+    <div class="os">敵人身上有答案選項<br>射擊正確答案得分！<br>沒打到或打錯 → 扣血<br>← 🔫 → 移動射擊</div>
     <button class="bb" id="startbtn">開始遊戲 ▶</button>
   </div>
 </div>
 
 <div class="qbar" id="qbar">遊戲開始後出現題目...</div>
 
-<div class="dpad">
+<div class="bottom-row">
   <button class="dbtn" id="dl">←</button>
   <button class="dbtn" id="dshoot">🔫</button>
   <button class="dbtn" id="dr">→</button>
-</div>
-
-<div class="ctrl">
   <button class="cbtn" id="pbtn">暫停</button>
   <button class="cbtn" id="rbtn">重來</button>
+  <button class="cbtn" id="closebtn" style="border-color:#7F1D1D;background:#1C0A0A;color:#F87171">✕</button>
 </div>
 
 <script>
 const cv=document.getElementById('gc');
 const cx=cv.getContext('2d');
-const W=360,H=480;
+const W=360,H=420;
 
 const QS=[
   {q:'BMI 正常範圍？',o:['<18.5','18.5-24','24-27','>30'],a:1},
@@ -488,6 +478,15 @@ document.getElementById('rbtn').onclick=init;
 document.getElementById('pbtn').onclick=function(){
   if(over)return;paused=!paused;
   this.textContent=paused?'繼續':'暫停';
+};
+
+document.getElementById('closebtn').onclick=function(){
+  if(confirm('確定要離開遊戲嗎？')){
+    window.close();
+    setTimeout(function(){
+      document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#060D1A;color:#94A3B8;font-family:sans-serif;gap:12px"><div style="font-size:40px">👋</div><div>感謝遊玩！</div><div style="font-size:12px;color:#475569">可以直接關閉此視窗</div></div>';
+    },100);
+  }
 };
 
 cx.fillStyle='#060D1A';cx.fillRect(0,0,W,H);
