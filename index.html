@@ -8,27 +8,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
-body{font-family:'Noto Sans TC',sans-serif;background:#060D1A;color:#fff;
+body{font-family:'Noto Sans TC',sans-serif;background:#060D1A;color:#F1F5F9;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:6px;height:100vh;height:100dvh}
 .stats{display:flex;gap:4px;width:100%;max-width:400px;margin-bottom:4px}
-.chip{flex:1;background:#1E293B;border-radius:6px;border:1px solid #334155;padding:3px 4px;text-align:center}
-.chip-t{font-size:8px;font-weight:700;color:#64748B;letter-spacing:.04em}
-.chip-v{font-size:14px;font-weight:700;color:#A78BFA;line-height:1.1}
+.chip{flex:1;background:#1E293B;border-radius:6px;border:1px solid #475569;padding:4px 4px;text-align:center}
+.chip-t{font-size:11px;font-weight:700;color:#CBD5E1;letter-spacing:.02em}
+.chip-v{font-size:18px;font-weight:700;color:#A78BFA;line-height:1.1}
 .canvas-wrap{position:relative;width:100%;max-width:400px;flex:1;min-height:0;display:flex;justify-content:center}
 canvas{display:block;border-radius:8px;border:1px solid #1E293B;width:100%;height:100%;object-fit:contain}
 .overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(6,13,26,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;gap:8px;padding:12px;overflow-y:auto}
-.ot{font-size:16px;font-weight:700;color:#A78BFA;text-align:center}
-.os{font-size:11px;color:#94A3B8;text-align:center;line-height:1.8}
-.bb{padding:10px 24px;border-radius:10px;border:none;background:#7C3AED;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
+.ot{font-size:20px;font-weight:700;color:#A78BFA;text-align:center}
+.os{font-size:14px;color:#E2E8F0;text-align:center;line-height:2}
+.bb{padding:12px 28px;border-radius:10px;border:none;background:#7C3AED;color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
 .bb:active{transform:scale(.97)}
-.qbar{background:#1E293B;border-radius:6px;border:1px solid #334155;padding:4px 8px;margin-top:4px;font-size:11px;color:#64748B;line-height:1.5;width:100%;max-width:400px;min-height:0}
+.qbar{background:#1E293B;border-radius:6px;border:1px solid #475569;padding:7px 12px;margin-top:4px;font-size:15px;color:#F1F5F9;line-height:1.6;width:100%;max-width:400px;min-height:0;font-weight:600}
 .qbar.ok{background:#064E3B;border-color:#10B981;color:#6EE7B7}
 .qbar.ng{background:#450A0A;border-color:#EF4444;color:#FCA5A5}
 .bottom-row{display:flex;gap:6px;width:100%;max-width:400px;margin-top:4px;align-items:center}
-.dbtn{flex:1;height:44px;border-radius:8px;border:1px solid #475569;background:#1E293B;color:#94A3B8;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.dbtn{flex:1;height:48px;border-radius:8px;border:1px solid #475569;background:#1E293B;color:#F1F5F9;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
 .dbtn:active{background:#334155;transform:scale(.93)}
-.cbtn{padding:0 10px;height:44px;border-radius:8px;border:1px solid #334155;background:#1E293B;color:#94A3B8;font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap}
+.cbtn{padding:0 12px;height:48px;border-radius:8px;border:1px solid #475569;background:#1E293B;color:#F1F5F9;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap}
 .cbtn:active{background:#334155}
 </style>
 </head>
@@ -57,6 +57,11 @@ canvas{display:block;border-radius:8px;border:1px solid #1E293B;width:100%;heigh
   <button class="dbtn" id="dr">→</button>
   <button class="cbtn" id="pbtn">暫停</button>
   <button class="cbtn" id="rbtn">重來</button>
+  <select id="diffsel" style="height:44px;padding:0 8px;border-radius:8px;border:1px solid #334155;background:#1E293B;color:#A78BFA;font-size:12px;font-family:'Noto Sans TC',sans-serif;cursor:pointer">
+    <option value="easy">簡易</option>
+    <option value="normal" selected>普通</option>
+    <option value="hard">困難</option>
+  </select>
   <button class="cbtn" id="closebtn" style="border-color:#7F1D1D;background:#1C0A0A;color:#F87171">✕</button>
 </div>
 
@@ -132,16 +137,23 @@ function loadQ(){
   spawnWave();
 }
 
+function getDifficulty(){return document.getElementById('diffsel').value;}
+
 function spawnWave(){
+  var diff=getDifficulty();
   var cols=curQ.o.length;
   var spacing=W/(cols+1);
   for(var i=0;i<cols;i++){
+    var vx=0;
+    if(diff==='normal') vx=(Math.random()-.5)*1.0;
+    if(diff==='hard')   vx=(Math.random()-.5)*2.0;
+    var vyBase=diff==='easy'?0.4:diff==='hard'?0.7:0.55;
     enemies.push({
       x:spacing*(i+1)-25,
       y:-50-i*20,
       w:50,h:38,
-      vx:(Math.random()-.5)*1.0,
-      vy:0.55+level*0.12,
+      vx:vx,
+      vy:vyBase+level*0.12,
       idx:i,
       label:curQ.o[i],
       isCorrect:(i===curQ.a),
@@ -181,12 +193,19 @@ cv.addEventListener('touchmove',function(e){
   var tx=(e.touches[0].clientX-r.left)*scaleX;
   player.x=Math.max(0,Math.min(W-player.w,tx-player.w/2));
 },{passive:false});
-cv.addEventListener('click',function(e){
-  if(over)return;
+
+// 滑鼠移動飛機（不發射）
+cv.addEventListener('mousemove',function(e){
+  if(over||paused)return;
   var r=cv.getBoundingClientRect();
   var scaleX=W/r.width;
   var tx=(e.clientX-r.left)*scaleX;
   player.x=Math.max(0,Math.min(W-player.w,tx-player.w/2));
+});
+
+// 點擊只發射（不移動）
+cv.addEventListener('click',function(e){
+  if(over)return;
   shoot();
 });
 
@@ -387,15 +406,15 @@ function rr(c,x,y,w,h,r){
 
 function wt(c,text,cx2,cy,maxW,col){
   c.fillStyle=col||'#fff';c.textAlign='center';c.textBaseline='middle';
-  c.font='bold 11px "Noto Sans TC",sans-serif';
+  c.font='bold 14px "Noto Sans TC",sans-serif';
   var chars=text.split(''),line='',lines=[];
   for(var i=0;i<chars.length;i++){
     var t=line+chars[i];
-    if(c.measureText(t).width>maxW-6&&line.length>0){lines.push(line);line=chars[i];}else line=t;
+    if(c.measureText(t).width>maxW-4&&line.length>0){lines.push(line);line=chars[i];}else line=t;
   }
   lines.push(line);
-  var sy=cy-((lines.length-1)*13)/2;
-  lines.forEach(function(l,i){c.fillText(l,cx2,sy+i*13);});
+  var sy=cy-((lines.length-1)*16)/2;
+  lines.forEach(function(l,i){c.fillText(l,cx2,sy+i*16);});
 }
 
 var starSeed=[];
