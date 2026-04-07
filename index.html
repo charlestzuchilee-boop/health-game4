@@ -180,18 +180,29 @@ document.getElementById('dl').onclick=function(){keys['ArrowLeft']=true;setTimeo
 document.getElementById('dr').onclick=function(){keys['ArrowRight']=true;setTimeout(function(){keys['ArrowRight']=false;},150);};
 document.getElementById('dshoot').onclick=shoot;
 
-var touchSX=null;
+var touchSX=null, touchSY=null, touchMoved=false;
 cv.addEventListener('touchstart',function(e){
   e.preventDefault();
   touchSX=e.touches[0].clientX;
-  shoot();
+  touchSY=e.touches[0].clientY;
+  touchMoved=false;
 },{passive:false});
 cv.addEventListener('touchmove',function(e){
   e.preventDefault();
+  var dx=e.touches[0].clientX-touchSX;
+  var dy=e.touches[0].clientY-touchSY;
+  if(Math.abs(dx)>6||Math.abs(dy)>6) touchMoved=true;
+  // 滑動移動飛機
   var r=cv.getBoundingClientRect();
   var scaleX=W/r.width;
   var tx=(e.touches[0].clientX-r.left)*scaleX;
   player.x=Math.max(0,Math.min(W-player.w,tx-player.w/2));
+},{passive:false});
+cv.addEventListener('touchend',function(e){
+  e.preventDefault();
+  // 沒有滑動 = 點擊 = 射擊
+  if(!touchMoved) shoot();
+  touchMoved=false;
 },{passive:false});
 
 // 滑鼠移動飛機（不發射）
